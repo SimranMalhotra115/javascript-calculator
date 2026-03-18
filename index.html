@@ -1,36 +1,267 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JavaScript Calculator</title>
-  <link rel="stylesheet" href="style.css">
+
+  <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@6/babel.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #c2c2d6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    #calculator {
+      width: 340px;
+      background: #000;
+      padding: 8px;
+      border: 2px solid #47476b;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .formula-screen {
+      min-height: 24px;
+      color: orange;
+      text-align: right;
+      font-size: 1.1rem;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      padding: 6px 8px 2px;
+    }
+
+    #display {
+      min-height: 40px;
+      color: white;
+      text-align: right;
+      font-size: 1.8rem;
+      padding: 4px 8px 10px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: #000;
+    }
+
+    button {
+      border: none;
+      min-height: 65px;
+      font-size: 1.35rem;
+      cursor: pointer;
+      color: white;
+      background: #4d4d4d;
+    }
+
+    button:hover {
+      outline: 1px solid #fff;
+      color: #000;
+      z-index: 1;
+    }
+
+    .operator {
+      background: #666;
+    }
+
+    #clear {
+      grid-column: span 2;
+      background: #ac3939;
+    }
+
+    #equals {
+      grid-row: span 2;
+      background: #004466;
+    }
+
+    #zero {
+      grid-column: span 2;
+    }
+
+    .top-dark {
+      background: #4d4d4d;
+    }
+  </style>
 </head>
 <body>
-  <div class="calc">
-    <div id="display" class="display">0</div>
-    <div class="keys">
-      <button data-key="7">7</button>
-      <button data-key="8">8</button>
-      <button data-key="9">9</button>
-      <button data-key="/">÷</button>
+  <div id="root"></div>
 
-      <button data-key="4">4</button>
-      <button data-key="5">5</button>
-      <button data-key="6">6</button>
-      <button data-key="*">×</button>
+  <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
 
-      <button data-key="1">1</button>
-      <button data-key="2">2</button>
-      <button data-key="3">3</button>
-      <button data-key="-">−</button>
+  <script type="text/babel">
+    function App() {
+      const [formula, setFormula] = React.useState("");
+      const [display, setDisplay] = React.useState("0");
+      const [evaluated, setEvaluated] = React.useState(false);
 
-      <button data-key="0">0</button>
-      <button data-key=".">.</button>
-      <button data-key="+">+</button>
-      <button data-key="=">=</button>
+      const isOperator = (value) => /[+\-*/]/.test(value);
 
-      <button data-key="C">C</button>
-    </div>
-  </div>
-  <script src="script.js"></script>
+      const clearAll = () => {
+        setFormula("");
+        setDisplay("0");
+        setEvaluated(false);
+      };
+
+      const handleNumber = (num) => {
+        if (evaluated) {
+          setFormula(num);
+          setDisplay(num);
+          setEvaluated(false);
+          return;
+        }
+
+        if (display === "0" && num === "0") {
+          if (formula === "" || /[+\-*/]0?$/.test(formula)) {
+            return;
+          }
+        }
+
+        if (display === "0" && num !== "0") {
+          if (formula === "" || /[+\-*/]0$/.test(formula)) {
+            setFormula((prev) => prev.replace(/0$/, num));
+          } else {
+            setFormula((prev) => prev + num);
+          }
+          setDisplay(num);
+          return;
+        }
+
+        setFormula((prev) => prev + num);
+        setDisplay((prev) => (prev === "0" ? num : prev + num));
+      };
+
+      const handleDecimal = () => {
+        if (evaluated) {
+          setFormula("0.");
+          setDisplay("0.");
+          setEvaluated(false);
+          return;
+        }
+
+        if (display.includes(".")) return;
+
+        if (formula === "" || isOperator(formula.slice(-1))) {
+          setFormula((prev) => prev + "0.");
+          setDisplay("0.");
+        } else {
+          setFormula((prev) => prev + ".");
+          setDisplay((prev) => prev + ".");
+        }
+      };
+
+      const handleOperator = (operator) => {
+        if (evaluated) {
+          setFormula(display + operator);
+          setDisplay(operator);
+          setEvaluated(false);
+          return;
+        }
+
+        if (formula === "" && operator !== "-") return;
+
+        const lastChar = formula.slice(-1);
+        const secondLastChar = formula.slice(-2, -1);
+
+        if (isOperator(lastChar)) {
+          if (operator === "-" && lastChar !== "-") {
+            setFormula((prev) => prev + operator);
+            setDisplay(operator);
+          } else {
+            if (isOperator(secondLastChar)) {
+              setFormula((prev) => prev.slice(0, -2) + operator);
+            } else {
+              setFormula((prev) => prev.slice(0, -1) + operator);
+            }
+            setDisplay(operator);
+          }
+        } else {
+          setFormula((prev) => prev + operator);
+          setDisplay(operator);
+        }
+      };
+
+      const handleEquals = () => {
+        if (formula === "") return;
+
+        let expression = formula;
+
+        while (/[+\-*/]$/.test(expression)) {
+          expression = expression.slice(0, -1);
+        }
+
+        expression = expression.replace(/--/g, "+");
+
+        try {
+          let result = eval(expression);
+          result = Math.round((result + Number.EPSILON) * 1000000000000) / 1000000000000;
+          result = result.toString();
+
+          setDisplay(result);
+          setFormula(expression + "=" + result);
+          setEvaluated(true);
+        } catch (error) {
+          setDisplay("Error");
+        }
+      };
+
+      const buttons = [
+        { id: "clear", value: "AC", onClick: clearAll },
+        { id: "divide", value: "/", className: "operator", onClick: () => handleOperator("/") },
+        { id: "multiply", value: "*", className: "operator", onClick: () => handleOperator("*") },
+        { id: "seven", value: "7", onClick: () => handleNumber("7") },
+        { id: "eight", value: "8", onClick: () => handleNumber("8") },
+        { id: "nine", value: "9", onClick: () => handleNumber("9") },
+        { id: "subtract", value: "-", className: "operator", onClick: () => handleOperator("-") },
+        { id: "four", value: "4", onClick: () => handleNumber("4") },
+        { id: "five", value: "5", onClick: () => handleNumber("5") },
+        { id: "six", value: "6", onClick: () => handleNumber("6") },
+        { id: "add", value: "+", className: "operator", onClick: () => handleOperator("+") },
+        { id: "one", value: "1", onClick: () => handleNumber("1") },
+        { id: "two", value: "2", onClick: () => handleNumber("2") },
+        { id: "three", value: "3", onClick: () => handleNumber("3") },
+        { id: "equals", value: "=", onClick: handleEquals },
+        { id: "zero", value: "0", onClick: () => handleNumber("0") },
+        { id: "decimal", value: ".", onClick: handleDecimal }
+      ];
+
+      return (
+        <div id="calculator">
+          <div className="formula-screen">{formula || "0"}</div>
+          <div id="display">{display}</div>
+
+          <div className="buttons">
+            {buttons.map((btn) => (
+              <button
+                key={btn.id}
+                id={btn.id}
+                className={btn.className || ""}
+                onClick={btn.onClick}
+              >
+                {btn.value}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+  </script>
 </body>
 </html>
